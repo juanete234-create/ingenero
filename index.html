@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingenero - Gestión de Pedidos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .active-tab { color: #f97316; border-top: 3px solid #f97316; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans antialiased text-gray-900">
+
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col">
+        
+        <header class="bg-orange-600 text-white p-4 sticky top-0 z-10 shadow-md">
+            <h1 class="text-xl font-bold flex items-center justify-between">
+                <span><i class="fas fa-utensils mr-2"></i> INGENERO</span>
+                <span class="text-xs bg-orange-800 px-2 py-1 rounded">V 1.0</span>
+            </h1>
+        </header>
+
+        <main class="flex-grow p-4 mb-20">
+            
+            <div v-if="currentTab === 'home'">
+                <h2 class="text-lg font-bold mb-4 italic text-gray-600">Resumen Semanal</h2>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                    <p class="text-sm text-blue-700 font-bold uppercase">Hoy: {{ currentDayName }}</p>
+                    <p class="text-2xl font-black text-blue-900">{{ pendingOrdersCount }} Pedidos hoy</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                        <span class="block text-3xl font-bold text-orange-600">{{ providers.length }}</span>
+                        <span class="text-xs uppercase text-gray-500">Proveedores</span>
+                    </div>
+                    <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                        <span class="block text-3xl font-bold text-green-600">{{ orders.length }}</span>
+                        <span class="text-xs uppercase text-gray-500">Pedidos Mes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'providers'">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Mis Proveedores</h2>
+                    <button v-if="providers.length < 10" @click="showAddProvider = true" class="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                        + Añadir
+                    </button>
+                </div>
+
+                <p v-if="providers.length === 0" class="text-center text-gray-400 my-10 font-light italic">No hay proveedores registrados.</p>
+
+                <div v-for="prov in providers" :key="prov.id" class="bg-white border rounded-lg p-4 mb-3 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg text-gray-800">{{ prov.name }}</h3>
+                            <p class="text-xs text-gray-500">Pedido: <span class="font-semibold text-orange-600">{{ prov.orderDay }}</span> | Recibe: {{ prov.deliveryDay }}</p>
+                        </div>
+                        <button @click="deleteProvider(prov.id)" class="text-red-400"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div v-if="showAddProvider" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div class="bg-white w-full rounded-2xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Nuevo Proveedor ({{providers.length}}/10)</h3>
+                        <input v-model="newProv.name" type="text" placeholder="Nombre (ej. Carnes García)" class="w-full border p-3 rounded mb-4">
+                        <label class="text-xs font-bold text-gray-500">DÍA DE PEDIDO</label>
+                        <select v-model="newProv.orderDay" class="w-full border p-3 rounded mb-4 italic">
+                            <option v-for="day in days" :key="day" :value="day">{{ day }}</option>
+                        </select>
+                        <label class="text-xs font-bold text-gray-500">DÍA DE RECEPCIÓN</label>
+                        <select v-model="newProv.deliveryDay" class="w-full border p-3 rounded mb-4 italic">
+                            <option v-for="day in days" :key="day" :value="day">{{ day }}</option>
+                        </select>
+                        <div class="flex gap-2">
+                            <button @click="showAddProvider = false" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Cancelar</button>
+                            <button @click="saveProvider" class="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'orders'">
+                <h2 class="text-xl font-bold mb-4">Pedidos de Hoy</h2>
+                <div v-for="p in providersToday" class="bg-white border-2 border-orange-200 rounded-xl p-4 mb-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-orange-800 uppercase text-sm">{{ p.name }}</span>
+                        <span class="bg-orange-100 text-orange-800 text-[10px] px-2 py-1 rounded font-bold">HOY TOCA PEDIDO</span>
+                    </div>
+                    <button @click="createOrder(p)" class="w-full py-2 bg-orange-600 text-white rounded-lg font-bold text-sm">Iniciar Checklist</button>
+                </div>
+                <p v-if="providersToday.length === 0" class="text-center py-10 text-gray-400 italic">No hay pedidos programados para hoy.</p>
+            </div>
+
+            <div v-if="currentTab === 'reception'">
+                <h2 class="text-xl font-bold mb-4">Recepción de Mercancía</h2>
+                <div v-for="order in activeOrders" :key="order.id" class="bg-white border rounded-lg p-4 mb-3 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold">{{ order.providerName }}</span>
+                        <span class="text-xs text-gray-400 italic">{{ order.date }}</span>
+                    </div>
+                    <div class="flex justify-around">
+                        <button @click="updateStatus(order.id, 'Recibido')" :class="order.status === 'Recibido' ? 'bg-green-600 text-white' : 'bg-gray-100'" class="px-3 py-1 rounded text-xs font-bold">RECIBIDO</button>
+                        <button @click="updateStatus(order.id, 'Parcial')" :class="order.status === 'Parcial' ? 'bg-yellow-500 text-white' : 'bg-gray-100'" class="px-3 py-1 rounded text-xs font-bold">PARCIAL</button>
+                        <button @click="updateStatus(order.id, 'No recibido')" :class="order.status === 'No recibido' ? 'bg-red-600 text-white' : 'bg-gray-100'" class="px-3 py-1 rounded text-xs font-bold">FALTA</button>
+                    </div>
+                </div>
+                <button @click="clearHistory" class="w-full mt-10 text-red-500 text-xs font-bold underline italic">Borrar historial de pedidos</button>
+            </div>
+
+        </main>
+
+        <nav class="fixed bottom-0 max-w-md w-full bg-white border-t flex justify-around p-2 safe-area-bottom z-10">
+            <button @click="currentTab = 'home'" :class="{'active-tab': currentTab === 'home'}" class="flex flex-col items-center p-2 transition-all">
+                <i class="fas fa-home"></i><span class="text-[10px] mt-1 font-bold">Inicio</span>
+            </button>
+            <button @click="currentTab = 'providers'" :class="{'active-tab': currentTab === 'providers'}" class="flex flex-col items-center p-2 transition-all">
+                <i class="fas fa-truck"></i><span class="text-[10px] mt-1 font-bold">Proveedores</span>
+            </button>
+            <button @click="currentTab = 'orders'" :class="{'active-tab': currentTab === 'orders'}" class="flex flex-col items-center p-2 transition-all">
+                <i class="fas fa-clipboard-list"></i><span class="text-[10px] mt-1 font-bold">Pedidos</span>
+            </button>
+            <button @click="currentTab = 'reception'" :class="{'active-tab': currentTab === 'reception'}" class="flex flex-col items-center p-2 transition-all">
+                <i class="fas fa-box-open"></i><span class="text-[10px] mt-1 font-bold">Recepción</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('home');
+                const providers = ref([]);
+                const orders = ref([]);
+                const showAddProvider = ref(false);
+                const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+                
+                const newProv = ref({ name: '', orderDay: 'Lunes', deliveryDay: 'Martes' });
+
+                // Datos simulados iniciales si no hay nada en localStorage
+                onMounted(() => {
+                    const savedProviders = localStorage.getItem('ingenero_providers');
+                    const savedOrders = localStorage.getItem('ingenero_orders');
+                    if (savedProviders) providers.value = JSON.parse(savedProviders);
+                    if (savedOrders) orders.value = JSON.parse(savedOrders);
+                });
+
+                const currentDayName = computed(() => {
+                    const d = new Date();
+                    return days[d.getDay() === 0 ? 6 : d.getDay() - 1];
+                });
+
+                const providersToday = computed(() => {
+                    return providers.value.filter(p => p.orderDay === currentDayName.value);
+                });
+
+                const pendingOrdersCount = computed(() => providersToday.value.length);
+                
+                const activeOrders = computed(() => orders.value);
+
+                const saveProvider = () => {
+                    if (newProv.value.name && providers.value.length < 10) {
+                        providers.value.push({
+                            id: Date.now(),
+                            ...newProv.value
+                        });
+                        localStorage.setItem('ingenero_providers', JSON.stringify(providers.value));
+                        newProv.value = { name: '', orderDay: 'Lunes', deliveryDay: 'Martes' };
+                        showAddProvider.value = false;
+                    }
+                };
+
+                const deleteProvider = (id) => {
+                    providers.value = providers.value.filter(p => p.id !== id);
+                    localStorage.setItem('ingenero_providers', JSON.stringify(providers.value));
+                };
+
+                const createOrder = (prov) => {
+                    const newOrder = {
+                        id: Date.now(),
+                        providerName: prov.name,
+                        date: new Date().toLocaleDateString(),
+                        status: 'Pendiente'
+                    };
+                    orders.value.unshift(newOrder);
+                    localStorage.setItem('ingenero_orders', JSON.stringify(orders.value));
+                    alert(`Checklist de pedido para ${prov.name} generado.`);
+                    currentTab.value = 'reception';
+                };
+
+                const updateStatus = (id, status) => {
+                    const order = orders.value.find(o => o.id === id);
+                    if (order) {
+                        order.status = status;
+                        localStorage.setItem('ingenero_orders', JSON.stringify(orders.value));
+                    }
+                };
+
+                const clearHistory = () => {
+                    if(confirm('¿Borrar todo el historial?')) {
+                        orders.value = [];
+                        localStorage.removeItem('ingenero_orders');
+                    }
+                };
+
+                return {
+                    currentTab, providers, orders, showAddProvider, days, newProv,
+                    currentDayName, providersToday, pendingOrdersCount, activeOrders,
+                    saveProvider, deleteProvider, createOrder, updateStatus, clearHistory
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
