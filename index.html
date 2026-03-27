@@ -3,129 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ingenero - Gestión de Pedidos</title>
+    <title>Ingenero Pro - Gestión de Restaurante</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
         .active-tab { color: #f97316; border-top: 3px solid #f97316; }
+        input:focus { outline: none; border-color: #f97316; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-900">
 
     <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col">
         
-        <header class="bg-orange-600 text-white p-4 sticky top-0 z-10 shadow-md">
-            <h1 class="text-xl font-bold flex items-center justify-between">
-                <span><i class="fas fa-utensils mr-2"></i> INGENERO</span>
-                <span class="text-xs bg-orange-800 px-2 py-1 rounded">V 1.0</span>
-            </h1>
+        <header class="bg-orange-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
+            <h1 class="text-xl font-bold italic tracking-tighter">INGENERO</h1>
+            <div class="text-[10px] bg-orange-700 px-2 py-1 rounded uppercase font-bold">Modo Senior</div>
         </header>
 
-        <main class="flex-grow p-4 mb-20">
+        <main class="flex-grow p-4 mb-20 overflow-y-auto">
             
             <div v-if="currentTab === 'home'">
-                <h2 class="text-lg font-bold mb-4 italic text-gray-600">Resumen Semanal</h2>
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
-                    <p class="text-sm text-blue-700 font-bold uppercase">Hoy: {{ currentDayName }}</p>
-                    <p class="text-2xl font-black text-blue-900">{{ pendingOrdersCount }} Pedidos hoy</p>
+                <h2 class="text-lg font-bold mb-4 text-gray-700">Panel de Control</h2>
+                <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-5 mb-6 rounded-2xl text-white shadow-lg">
+                    <p class="text-xs opacity-80 uppercase font-bold tracking-widest">{{ currentDayName }}</p>
+                    <p class="text-3xl font-black">{{ pendingOrdersCount }} Pedidos Hoy</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
-                        <span class="block text-3xl font-bold text-orange-600">{{ providers.length }}</span>
-                        <span class="text-xs uppercase text-gray-500">Proveedores</span>
+                    <div class="bg-white border-2 border-gray-100 rounded-2xl p-4 text-center shadow-sm">
+                        <span class="block text-3xl font-black text-orange-600">{{ providers.length }}</span>
+                        <span class="text-[10px] uppercase font-bold text-gray-400">Proveedores</span>
                     </div>
-                    <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
-                        <span class="block text-3xl font-bold text-green-600">{{ orders.length }}</span>
-                        <span class="text-xs uppercase text-gray-500">Pedidos Mes</span>
+                    <div class="bg-white border-2 border-gray-100 rounded-2xl p-4 text-center shadow-sm">
+                        <span class="block text-3xl font-black text-green-600">{{ ordersThisWeek }}</span>
+                        <span class="text-[10px] uppercase font-bold text-gray-400">Pedidos Semana</span>
                     </div>
                 </div>
             </div>
 
             <div v-if="currentTab === 'providers'">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Mis Proveedores</h2>
-                    <button v-if="providers.length < 10" @click="showAddProvider = true" class="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
-                        + Añadir
-                    </button>
-                </div>
+                <div v-if="!editingProvider">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Directorio</h2>
+                        <button v-if="providers.length < 10" @click="openAddModal" class="bg-black text-white px-4 py-2 rounded-xl text-xs font-bold ring-2 ring-black ring-offset-2">
+                            + NUEVO
+                        </button>
+                    </div>
 
-                <p v-if="providers.length === 0" class="text-center text-gray-400 my-10 font-light italic">No hay proveedores registrados.</p>
-
-                <div v-for="prov in providers" :key="prov.id" class="bg-white border rounded-lg p-4 mb-3 shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-lg text-gray-800">{{ prov.name }}</h3>
-                            <p class="text-xs text-gray-500">Pedido: <span class="font-semibold text-orange-600">{{ prov.orderDay }}</span> | Recibe: {{ prov.deliveryDay }}</p>
+                    <div v-for="prov in providers" :key="prov.id" class="bg-white border rounded-2xl p-4 mb-3 shadow-sm flex justify-between items-center">
+                        <div @click="startEditing(prov)" class="flex-grow cursor-pointer">
+                            <h3 class="font-bold text-gray-800">{{ prov.name }}</h3>
+                            <p class="text-xs text-gray-500"><i class="fas fa-phone mr-1"></i> {{ prov.phone }}</p>
+                            <p class="text-[10px] mt-1 font-bold text-orange-600 uppercase">Pide: {{ prov.orderDay }} | Recibe: {{ prov.deliveryDay }}</p>
                         </div>
-                        <button @click="deleteProvider(prov.id)" class="text-red-400"><i class="fas fa-trash"></i></button>
+                        <div class="flex gap-3">
+                            <button @click="startEditing(prov)" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
+                            <button @click="deleteProvider(prov.id)" class="text-red-300 p-2"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
                 </div>
 
-                <div v-if="showAddProvider" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white w-full rounded-2xl p-6">
-                        <h3 class="text-lg font-bold mb-4">Nuevo Proveedor ({{providers.length}}/10)</h3>
-                        <input v-model="newProv.name" type="text" placeholder="Nombre (ej. Carnes García)" class="w-full border p-3 rounded mb-4">
-                        <label class="text-xs font-bold text-gray-500">DÍA DE PEDIDO</label>
-                        <select v-model="newProv.orderDay" class="w-full border p-3 rounded mb-4 italic">
-                            <option v-for="day in days" :key="day" :value="day">{{ day }}</option>
-                        </select>
-                        <label class="text-xs font-bold text-gray-500">DÍA DE RECEPCIÓN</label>
-                        <select v-model="newProv.deliveryDay" class="w-full border p-3 rounded mb-4 italic">
-                            <option v-for="day in days" :key="day" :value="day">{{ day }}</option>
-                        </select>
-                        <div class="flex gap-2">
-                            <button @click="showAddProvider = false" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Cancelar</button>
-                            <button @click="saveProvider" class="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold">Guardar</button>
+                <div v-else class="bg-white">
+                    <button @click="editingProvider = null" class="text-orange-600 font-bold mb-4 flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Volver
+                    </button>
+                    <h2 class="text-xl font-bold mb-4">{{ isNew ? 'Nuevo Proveedor' : 'Editar Proveedor' }}</h2>
+                    
+                    <div class="space-y-3">
+                        <input v-model="tempProv.name" type="text" placeholder="Nombre del Proveedor" class="w-full border p-3 rounded-xl bg-gray-50">
+                        <input v-model="tempProv.phone" type="tel" placeholder="Número de contacto" class="w-full border p-3 rounded-xl bg-gray-50">
+                        
+                        <div class="grid grid-cols-2 gap-2 text-xs font-bold text-gray-500">
+                            <div>
+                                <label>DÍA PEDIDO</label>
+                                <select v-model="tempProv.orderDay" class="w-full border p-3 rounded-xl mt-1 bg-white">
+                                    <option v-for="d in days" :value="d">{{d}}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>DÍA RECEPCIÓN</label>
+                                <select v-model="tempProv.deliveryDay" class="w-full border p-3 rounded-xl mt-1 bg-white">
+                                    <option v-for="d in days" :value="d">{{d}}</option>
+                                </select>
+                            </div>
                         </div>
+
+                        <div class="mt-6">
+                            <h3 class="font-bold text-sm mb-2 border-b pb-1 italic text-gray-600 text-center">Plantilla de Productos (20 máx)</h3>
+                            <div class="grid grid-cols-12 gap-1 mb-2 text-[10px] font-bold text-center text-gray-400 uppercase">
+                                <div class="col-span-8">Producto</div>
+                                <div class="col-span-4">Cant.</div>
+                            </div>
+                            <div v-for="(item, index) in tempProv.items" :key="index" class="grid grid-cols-12 gap-2 mb-1">
+                                <input v-model="item.n" type="text" placeholder="..." class="col-span-8 border-b p-1 text-sm bg-transparent">
+                                <input v-model="item.q" type="text" placeholder="0" class="col-span-4 border-b p-1 text-sm text-center bg-transparent">
+                            </div>
+                        </div>
+
+                        <button @click="saveProvider" class="w-full py-4 bg-orange-600 text-white rounded-2xl font-black shadow-lg mt-6 uppercase tracking-widest">
+                            Guardar Cambios
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div v-if="currentTab === 'orders'">
-                <h2 class="text-xl font-bold mb-4">Pedidos de Hoy</h2>
-                <div v-for="p in providersToday" class="bg-white border-2 border-orange-200 rounded-xl p-4 mb-3">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-orange-800 uppercase text-sm">{{ p.name }}</span>
-                        <span class="bg-orange-100 text-orange-800 text-[10px] px-2 py-1 rounded font-bold">HOY TOCA PEDIDO</span>
+                <h2 class="text-xl font-bold mb-4">Pedidos Disponibles</h2>
+                <div v-for="p in providers" :key="p.id" class="bg-white border-2 border-orange-100 rounded-2xl p-4 mb-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="font-black text-gray-800">{{ p.name }}</span>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Pedido fijo: {{ p.orderDay }}</p>
+                        </div>
+                        <span v-if="p.orderDay === currentDayName" class="bg-orange-600 text-white text-[9px] px-2 py-1 rounded-full font-bold">TOCA HOY</span>
                     </div>
-                    <button @click="createOrder(p)" class="w-full py-2 bg-orange-600 text-white rounded-lg font-bold text-sm">Iniciar Checklist</button>
+                    <button @click="generateOrderFromTemplate(p)" class="w-full py-2 bg-gray-900 text-white rounded-xl font-bold text-xs uppercase">
+                        Generar Pedido Actual
+                    </button>
                 </div>
-                <p v-if="providersToday.length === 0" class="text-center py-10 text-gray-400 italic">No hay pedidos programados para hoy.</p>
             </div>
 
             <div v-if="currentTab === 'reception'">
-                <h2 class="text-xl font-bold mb-4">Recepción de Mercancía</h2>
-                <div v-for="order in activeOrders" :key="order.id" class="bg-white border rounded-lg p-4 mb-3 shadow-sm">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold">{{ order.providerName }}</span>
-                        <span class="text-xs text-gray-400 italic">{{ order.date }}</span>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Recepción</h2>
+                    <button @click="clearHistory" class="text-[10px] text-red-500 font-bold underline italic">Limpiar Todo</button>
+                </div>
+                
+                <div v-for="order in orders" :key="order.id" class="bg-white border rounded-2xl p-4 mb-4 shadow-sm ring-1 ring-gray-100">
+                    <div class="flex justify-between items-start mb-3 border-b pb-2">
+                        <div>
+                            <h3 class="font-bold text-orange-600 uppercase">{{ order.providerName }}</h3>
+                            <p class="text-[10px] text-gray-400 font-medium">Recibe: {{ order.deliveryDay }} (Generado el {{ order.date }})</p>
+                        </div>
+                        <div class="text-right">
+                            <span :class="getStatusClass(order.status)" class="text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-widest">
+                                {{ order.status }}
+                            </span>
+                        </div>
                     </div>
-                    <div class="flex justify-around">
-                        <button @click="updateStatus(order.id, 'Recibido')" :class="order.status === 'Recibido' ? 'bg-green-600 text-white' : 'bg-gray-100'" class="px-3 py-1 rounded text-xs font-bold">RECIBIDO</button>
-                        <button @click="updateStatus(order.id, 'Parcial')" :class="order.status === 'Parcial' ? 'bg-yellow-500 text-white' : 'bg-gray-100'" class="px-3 py-1 rounded text-xs font-bold">PARCIAL</button>
-                        <button @click="updateStatus(order.id, 'No recibido')" :class="order.status === 'No recibido' ? 'bg-red-600 text-white' : 'bg-gray-100'" class="px-3 py-1 rounded text-xs font-bold">FALTA</button>
+                    
+                    <div class="space-y-1 mb-4">
+                        <div v-for="item in order.items" v-if="item.n" class="flex justify-between text-xs py-1 border-b border-gray-50 italic">
+                            <span>{{ item.n }}</span>
+                            <span class="font-bold text-gray-500">{{ item.q }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button @click="updateStatus(order.id, 'Recibido')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[9px] font-black">RECIBIDO</button>
+                        <button @click="updateStatus(order.id, 'Parcial')" class="py-2 bg-yellow-50 text-yellow-700 rounded-lg text-[9px] font-black">PARCIAL</button>
+                        <button @click="updateStatus(order.id, 'Falta')" class="py-2 bg-red-50 text-red-700 rounded-lg text-[9px] font-black text-center">FALTA</button>
                     </div>
                 </div>
-                <button @click="clearHistory" class="w-full mt-10 text-red-500 text-xs font-bold underline italic">Borrar historial de pedidos</button>
+                <p v-if="orders.length === 0" class="text-center py-10 text-gray-300 italic font-light">No hay pedidos generados aún.</p>
             </div>
 
         </main>
 
-        <nav class="fixed bottom-0 max-w-md w-full bg-white border-t flex justify-around p-2 safe-area-bottom z-10">
-            <button @click="currentTab = 'home'" :class="{'active-tab': currentTab === 'home'}" class="flex flex-col items-center p-2 transition-all">
-                <i class="fas fa-home"></i><span class="text-[10px] mt-1 font-bold">Inicio</span>
-            </button>
-            <button @click="currentTab = 'providers'" :class="{'active-tab': currentTab === 'providers'}" class="flex flex-col items-center p-2 transition-all">
-                <i class="fas fa-truck"></i><span class="text-[10px] mt-1 font-bold">Proveedores</span>
-            </button>
-            <button @click="currentTab = 'orders'" :class="{'active-tab': currentTab === 'orders'}" class="flex flex-col items-center p-2 transition-all">
-                <i class="fas fa-clipboard-list"></i><span class="text-[10px] mt-1 font-bold">Pedidos</span>
-            </button>
-            <button @click="currentTab = 'reception'" :class="{'active-tab': currentTab === 'reception'}" class="flex flex-col items-center p-2 transition-all">
-                <i class="fas fa-box-open"></i><span class="text-[10px] mt-1 font-bold">Recepción</span>
+        <nav class="fixed bottom-0 max-w-md w-full bg-white border-t flex justify-around p-2 pb-4 safe-area-bottom z-50">
+            <button v-for="tab in ['home', 'providers', 'orders', 'reception']" 
+                    @click="currentTab = tab" 
+                    :class="{'active-tab': currentTab === tab}" 
+                    class="flex flex-col items-center p-2 transition-all flex-1">
+                <i :class="getTabIcon(tab)" class="text-lg"></i>
+                <span class="text-[9px] mt-1 font-black uppercase tracking-tighter">{{ getTabLabel(tab) }}</span>
             </button>
         </nav>
     </div>
@@ -138,59 +181,83 @@
                 const currentTab = ref('home');
                 const providers = ref([]);
                 const orders = ref([]);
-                const showAddProvider = ref(false);
+                const editingProvider = ref(null);
+                const isNew = ref(false);
                 const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
                 
-                const newProv = ref({ name: '', orderDay: 'Lunes', deliveryDay: 'Martes' });
+                // Estructura temporal para edición
+                const tempProv = ref({
+                    name: '', phone: '', orderDay: 'Lunes', deliveryDay: 'Martes',
+                    items: Array.from({ length: 20 }, () => ({ n: '', q: '' }))
+                });
 
-                // Datos simulados iniciales si no hay nada en localStorage
                 onMounted(() => {
-                    const savedProviders = localStorage.getItem('ingenero_providers');
-                    const savedOrders = localStorage.getItem('ingenero_orders');
-                    if (savedProviders) providers.value = JSON.parse(savedProviders);
-                    if (savedOrders) orders.value = JSON.parse(savedOrders);
+                    const p = localStorage.getItem('ing_provs');
+                    const o = localStorage.getItem('ing_ords');
+                    if (p) providers.value = JSON.parse(p);
+                    if (o) orders.value = JSON.parse(o);
                 });
 
                 const currentDayName = computed(() => {
                     const d = new Date();
-                    return days[d.getDay() === 0 ? 6 : d.getDay() - 1];
+                    const dayIdx = d.getDay();
+                    return days[dayIdx === 0 ? 6 : dayIdx - 1];
                 });
 
-                const providersToday = computed(() => {
-                    return providers.value.filter(p => p.orderDay === currentDayName.value);
-                });
+                const ordersThisWeek = computed(() => orders.value.length);
+                const pendingOrdersCount = computed(() => 
+                    providers.value.filter(p => p.orderDay === currentDayName.value).length
+                );
 
-                const pendingOrdersCount = computed(() => providersToday.value.length);
-                
-                const activeOrders = computed(() => orders.value);
+                const openAddModal = () => {
+                    isNew.value = true;
+                    tempProv.value = {
+                        id: Date.now(),
+                        name: '', phone: '', orderDay: 'Lunes', deliveryDay: 'Martes',
+                        items: Array.from({ length: 20 }, () => ({ n: '', q: '' }))
+                    };
+                    editingProvider.value = true;
+                };
+
+                const startEditing = (p) => {
+                    isNew.value = false;
+                    tempProv.value = JSON.parse(JSON.stringify(p)); // Clon profundo
+                    editingProvider.value = true;
+                };
 
                 const saveProvider = () => {
-                    if (newProv.value.name && providers.value.length < 10) {
-                        providers.value.push({
-                            id: Date.now(),
-                            ...newProv.value
-                        });
-                        localStorage.setItem('ingenero_providers', JSON.stringify(providers.value));
-                        newProv.value = { name: '', orderDay: 'Lunes', deliveryDay: 'Martes' };
-                        showAddProvider.value = false;
+                    if (!tempProv.value.name) return alert('Nombre obligatorio');
+                    
+                    if (isNew.value) {
+                        providers.value.push(tempProv.value);
+                    } else {
+                        const idx = providers.value.findIndex(p => p.id === tempProv.value.id);
+                        providers.value[idx] = tempProv.value;
                     }
+                    
+                    localStorage.setItem('ing_provs', JSON.stringify(providers.value));
+                    editingProvider.value = null;
                 };
 
                 const deleteProvider = (id) => {
-                    providers.value = providers.value.filter(p => p.id !== id);
-                    localStorage.setItem('ingenero_providers', JSON.stringify(providers.value));
+                    if(confirm('¿Eliminar proveedor?')) {
+                        providers.value = providers.value.filter(p => p.id !== id);
+                        localStorage.setItem('ing_provs', JSON.stringify(providers.value));
+                    }
                 };
 
-                const createOrder = (prov) => {
+                const generateOrderFromTemplate = (prov) => {
                     const newOrder = {
                         id: Date.now(),
                         providerName: prov.name,
+                        deliveryDay: prov.deliveryDay,
                         date: new Date().toLocaleDateString(),
+                        items: JSON.parse(JSON.stringify(prov.items)),
                         status: 'Pendiente'
                     };
                     orders.value.unshift(newOrder);
-                    localStorage.setItem('ingenero_orders', JSON.stringify(orders.value));
-                    alert(`Checklist de pedido para ${prov.name} generado.`);
+                    localStorage.setItem('ing_ords', JSON.stringify(orders.value));
+                    alert(`¡Pedido para ${prov.name} enviado a Recepción!`);
                     currentTab.value = 'reception';
                 };
 
@@ -198,21 +265,39 @@
                     const order = orders.value.find(o => o.id === id);
                     if (order) {
                         order.status = status;
-                        localStorage.setItem('ingenero_orders', JSON.stringify(orders.value));
+                        localStorage.setItem('ing_ords', JSON.stringify(orders.value));
                     }
                 };
 
                 const clearHistory = () => {
-                    if(confirm('¿Borrar todo el historial?')) {
+                    if(confirm('¿Borrar historial de pedidos?')) {
                         orders.value = [];
-                        localStorage.removeItem('ingenero_orders');
+                        localStorage.removeItem('ing_ords');
                     }
                 };
 
+                const getStatusClass = (s) => {
+                    if (s === 'Recibido') return 'bg-green-100 text-green-700';
+                    if (s === 'Parcial') return 'bg-yellow-100 text-yellow-700';
+                    if (s === 'Falta') return 'bg-red-100 text-red-700';
+                    return 'bg-gray-100 text-gray-500';
+                };
+
+                const getTabIcon = (tab) => {
+                    const icons = { home: 'fas fa-th-large', providers: 'fas fa-address-book', orders: 'fas fa-pen-nib', reception: 'fas fa-truck-loading' };
+                    return icons[tab];
+                };
+
+                const getTabLabel = (tab) => {
+                    const labels = { home: 'Inicio', providers: 'Proveedores', orders: 'Pedir', reception: 'Recepción' };
+                    return labels[tab];
+                };
+
                 return {
-                    currentTab, providers, orders, showAddProvider, days, newProv,
-                    currentDayName, providersToday, pendingOrdersCount, activeOrders,
-                    saveProvider, deleteProvider, createOrder, updateStatus, clearHistory
+                    currentTab, providers, orders, editingProvider, isNew, days, tempProv,
+                    currentDayName, ordersThisWeek, pendingOrdersCount,
+                    openAddModal, startEditing, saveProvider, deleteProvider,
+                    generateOrderFromTemplate, updateStatus, clearHistory, getStatusClass, getTabIcon, getTabLabel
                 }
             }
         }).mount('#app');
