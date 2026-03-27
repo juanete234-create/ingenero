@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ingenero Pro - Gestión Total</title>
+    <title>Ingenero Pro - Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,36 +12,35 @@
         .active-tab { color: #f97316; border-top: 3px solid #f97316; }
         .checked-item { text-decoration: line-through; opacity: 0.5; }
         input:focus, textarea:focus { outline: none; border-color: #f97316; }
+        [v-cloak] { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-900 overflow-x-hidden">
 
-    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col relative">
+    <div id="app" v-cloak class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col relative">
         
         <header class="bg-orange-600 text-white p-4 sticky top-0 z-40 shadow-md flex justify-between items-center">
             <h1 class="text-xl font-bold italic tracking-tighter">INGENERO PRO</h1>
-            <i class="fas fa-utensils opacity-50"></i>
+            <div class="text-[10px] bg-orange-700 px-2 py-1 rounded uppercase font-bold">v3.1 Fix</div>
         </header>
 
         <main class="flex-grow p-4 mb-24 overflow-y-auto">
             
             <div v-if="currentTab === 'home'">
-                <h2 class="text-lg font-bold mb-4 text-gray-700">Estado Semanal</h2>
+                <h2 class="text-lg font-bold mb-4 text-gray-700">Panel</h2>
                 <div class="bg-slate-800 p-6 mb-6 rounded-3xl text-white shadow-xl">
                     <p class="text-[10px] opacity-60 uppercase font-bold tracking-widest mb-1">{{ currentDayFull }}</p>
                     <p class="text-3xl font-black text-orange-400">{{ pendingOrdersCount }} Pedidos Hoy</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white border-2 border-gray-50 rounded-2xl p-5 text-center shadow-sm">
-                        <i class="fas fa-users text-gray-300 mb-2 block text-xl"></i>
+                    <div class="bg-white border rounded-2xl p-5 text-center shadow-sm">
                         <span class="block text-3xl font-black text-orange-600">{{ providers.length }}</span>
                         <span class="text-[9px] uppercase font-bold text-gray-400">Proveedores</span>
                     </div>
-                    <div class="bg-white border-2 border-gray-50 rounded-2xl p-5 text-center shadow-sm">
-                        <i class="fas fa-calendar-check text-gray-300 mb-2 block text-xl"></i>
+                    <div class="bg-white border rounded-2xl p-5 text-center shadow-sm">
                         <span class="block text-3xl font-black text-green-600">{{ orders.length }}</span>
-                        <span class="text-[9px] uppercase font-bold text-gray-400">Pedidos Activos</span>
+                        <span class="text-[9px] uppercase font-bold text-gray-400">Historial</span>
                     </div>
                 </div>
             </div>
@@ -49,40 +48,37 @@
             <div v-if="currentTab === 'providers'">
                 <div v-if="!editingProvider">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold italic">Mis Proveedores</h2>
-                        <button v-if="providers.length < 10" @click="openAddModal" class="bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">
-                            + AÑADIR
+                        <h2 class="text-xl font-bold italic text-slate-800">Directorio</h2>
+                        <button v-if="providers.length < 10" @click="openAddModal" class="bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-bold">
+                            + NUEVO
                         </button>
                     </div>
-                    <div v-for="prov in providers" :key="prov.id" class="bg-white border rounded-2xl p-4 mb-3 shadow-sm flex justify-between items-center border-l-4 border-l-slate-800">
-                        <div @click="startEditing(prov)" class="flex-grow">
-                            <h3 class="font-black text-gray-800 leading-tight uppercase">{{ prov.name }}</h3>
-                            <p class="text-xs text-gray-400 font-bold italic">{{ prov.phone }}</p>
+                    <div v-for="prov in providers" :key="prov.id" class="bg-white border rounded-2xl p-4 mb-3 shadow-sm flex justify-between items-center border-l-4 border-l-orange-500">
+                        <div @click="startEditing(prov)" class="flex-grow cursor-pointer">
+                            <h3 class="font-black text-gray-800 uppercase text-sm leading-tight">{{ prov.name }}</h3>
+                            <p class="text-xs text-gray-400 font-bold italic mt-1">{{ prov.phone }}</p>
                         </div>
                         <div class="flex gap-2 text-gray-400">
-                            <button @click="startEditing(prov)" class="p-2 hover:text-orange-600"><i class="fas fa-edit"></i></button>
-                            <button @click="deleteProvider(prov.id)" class="p-2 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                            <button @click="startEditing(prov)" class="p-2"><i class="fas fa-edit"></i></button>
+                            <button @click="deleteProvider(prov.id)" class="p-2"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
+                    <p v-if="providers.length === 0" class="text-center py-10 text-gray-300 italic">No hay proveedores creados.</p>
                 </div>
 
                 <div v-else class="bg-white pb-10">
-                    <div class="flex justify-between items-center mb-6">
-                        <button @click="editingProvider = null" class="text-slate-400 font-bold flex items-center text-xs">
-                            <i class="fas fa-times mr-2"></i> CANCELAR
-                        </button>
-                        <h2 class="text-lg font-black uppercase text-orange-600">{{ isNew ? 'Nuevo' : 'Editar' }}</h2>
-                    </div>
+                    <button @click="editingProvider = null" class="text-slate-400 font-bold mb-6 flex items-center text-xs">
+                        <i class="fas fa-times mr-2"></i> CANCELAR
+                    </button>
                     <div class="space-y-4">
-                        <div class="group border-b-2 focus-within:border-orange-500 transition-colors">
-                            <label class="text-[9px] font-black text-gray-400 uppercase">Nombre Comercial</label>
+                        <div class="border-b-2">
+                            <label class="text-[9px] font-black text-gray-400 uppercase">Nombre</label>
                             <input v-model="tempProv.name" type="text" class="w-full py-2 font-bold text-lg bg-transparent">
                         </div>
-                        <div class="group border-b focus-within:border-orange-500 transition-colors">
-                            <label class="text-[9px] font-black text-gray-400 uppercase">Teléfono WhatsApp</label>
-                            <input v-model="tempProv.phone" type="tel" placeholder="34600000000" class="w-full py-2 text-sm bg-transparent">
+                        <div class="border-b">
+                            <label class="text-[9px] font-black text-gray-400 uppercase">WhatsApp (Ej: 34600112233)</label>
+                            <input v-model="tempProv.phone" type="tel" class="w-full py-2 text-sm bg-transparent">
                         </div>
-                        
                         <div class="grid grid-cols-2 gap-4">
                             <div class="bg-gray-50 p-3 rounded-xl">
                                 <label class="text-[9px] font-black text-gray-400 uppercase">Día Pedido</label>
@@ -97,19 +93,15 @@
                                 </select>
                             </div>
                         </div>
-
                         <div class="mt-8">
-                            <div class="flex items-center justify-between mb-4 border-b pb-2">
-                                <h3 class="font-black text-[10px] text-slate-800 uppercase tracking-widest">Plantilla de Productos</h3>
-                                <span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded text-gray-400 font-bold">20 LÍNEAS</span>
-                            </div>
+                            <h3 class="font-black text-[10px] text-slate-800 uppercase tracking-widest mb-4 border-b pb-2">Plantilla de Pedido</h3>
                             <div v-for="(item, index) in tempProv.items" :key="index" class="flex gap-2 mb-2 items-center bg-gray-50/50 p-1 rounded-lg">
-                                <span class="text-[9px] text-gray-300 w-4 text-center font-bold">{{index + 1}}</span>
-                                <input v-model="item.n" type="text" placeholder="Nombre producto" class="flex-grow p-1 text-xs bg-transparent border-b border-transparent focus:border-orange-300">
+                                <span class="text-[9px] text-gray-300 w-4 text-center">{{index + 1}}</span>
+                                <input v-model="item.n" type="text" placeholder="Producto" class="flex-grow p-1 text-xs bg-transparent border-b border-transparent">
                                 <input v-model="item.q" type="text" placeholder="Cant." class="w-14 p-1 text-xs text-center font-bold text-orange-600 bg-white rounded shadow-sm">
                             </div>
                         </div>
-                        <button @click="saveProvider" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg uppercase tracking-widest mt-6 active:scale-95 transition-transform">
+                        <button @click="saveProvider" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest mt-6">
                             Guardar Cambios
                         </button>
                     </div>
@@ -117,33 +109,32 @@
             </div>
 
             <div v-if="currentTab === 'orders'">
-                <h2 class="text-xl font-bold mb-4 italic">Realizar Pedido</h2>
-                <div v-for="p in providers" :key="p.id" class="bg-white border rounded-2xl p-5 mb-4 shadow-sm border-l-4 border-orange-200">
+                <h2 class="text-xl font-bold mb-4 italic">Hacer Pedido</h2>
+                <div v-for="p in providers" :key="p.id" class="bg-white border rounded-2xl p-5 mb-4 shadow-sm">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h3 class="font-black text-gray-800 text-lg uppercase leading-none">{{ p.name }}</h3>
-                            <p class="text-[9px] text-orange-600 font-bold mt-2 uppercase tracking-widest">Pedido Fijo: {{ p.orderDay }}</p>
+                            <h3 class="font-black text-gray-800 text-lg uppercase">{{ p.name }}</h3>
+                            <p class="text-[9px] text-orange-600 font-bold uppercase tracking-widest">Pedido: {{ p.orderDay }}</p>
                         </div>
-                        <i v-if="p.orderDay === currentDayName" class="fas fa-clock text-orange-500 animate-pulse"></i>
                     </div>
-                    <button @click="generateOrderFromTemplate(p)" class="w-full py-3 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md">
-                        Generar para Recepción
+                    <button @click="generateOrderFromTemplate(p)" class="w-full py-3 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md">
+                        Generar Pedido Actual
                     </button>
                 </div>
-                <p v-if="providers.length === 0" class="text-center py-20 text-gray-300 italic text-sm font-light">Primero añade proveedores...</p>
+                <p v-if="providers.length === 0" class="text-center py-10 text-gray-300">Añade proveedores primero.</p>
             </div>
 
             <div v-if="currentTab === 'reception'">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold italic">Checklist Recepción</h2>
-                    <button @click="clearHistory" class="text-[10px] text-red-400 font-bold uppercase tracking-widest">Borrar Historial</button>
+                    <button @click="clearHistory" class="text-[10px] text-red-400 font-bold uppercase">Limpiar</button>
                 </div>
                 
-                <div v-for="order in orders" :key="order.id" class="bg-white border-2 rounded-3xl p-5 mb-6 shadow-md border-gray-50 relative overflow-hidden">
+                <div v-for="order in orders" :key="order.id" class="bg-white border-2 rounded-3xl p-5 mb-6 shadow-md border-gray-50">
                     <div class="flex justify-between items-start mb-4">
-                        <div @click="openChecklist(order)" class="cursor-pointer">
-                            <h3 class="font-black text-slate-800 text-xl leading-none uppercase">{{ order.providerName }}</h3>
-                            <p class="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-widest">Llega el {{ order.deliveryDay }}</p>
+                        <div>
+                            <h3 class="font-black text-slate-800 text-xl uppercase">{{ order.providerName }}</h3>
+                            <p class="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-widest">Fecha: {{ order.date }}</p>
                         </div>
                         <span :class="getStatusClass(order.status)" class="text-[8px] font-black px-2 py-1 rounded-md uppercase ring-1">
                             {{ order.status }}
@@ -151,13 +142,12 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Notas / Incidencias:</label>
-                        <textarea v-model="order.notes" @change="saveToStorage" placeholder="Escribe aquí si falta algo o llega roto..." class="w-full bg-orange-50/50 rounded-xl p-3 text-xs italic text-orange-800 border border-orange-100 min-h-[60px]"></textarea>
+                        <textarea v-model="order.notes" @change="saveToStorage" placeholder="Incidencias (faltas, rotos...)" class="w-full bg-orange-50/50 rounded-xl p-3 text-xs italic text-orange-800 border border-orange-100 min-h-[60px]"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <button @click="openChecklist(order)" class="py-3 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-sm">
-                            <i class="fas fa-list-check"></i> Puntear Ítems
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button @click="openChecklist(order)" class="py-3 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
+                            <i class="fas fa-list-check"></i> Puntear Items
                         </button>
                         <button @click="exportToWhatsApp(order)" class="py-3 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-md">
                             <i class="fab fa-whatsapp text-lg"></i> WhatsApp
@@ -167,23 +157,24 @@
                     <div class="flex gap-2">
                         <button v-for="s in ['Recibido', 'Parcial', 'Falta']" @click="updateStatus(order.id, s)" 
                                 :class="order.status === s ? 'bg-orange-600 text-white' : 'bg-gray-50 text-gray-400'"
-                                class="flex-1 py-2 rounded-lg text-[8px] font-black uppercase transition-colors">
+                                class="flex-1 py-2 rounded-lg text-[8px] font-black uppercase">
                             {{s}}
                         </button>
                     </div>
                 </div>
+                <p v-if="orders.length === 0" class="text-center py-10 text-gray-300 italic">No hay pedidos generados.</p>
             </div>
         </main>
 
-        <div v-if="activeChecklistOrder" class="fixed inset-0 bg-slate-900/90 z-50 flex flex-col pt-12 px-4 pb-4 animate-in fade-in duration-300">
+        <div v-if="activeChecklistOrder" class="fixed inset-0 bg-slate-900/90 z-50 flex flex-col pt-12 px-4 pb-4">
             <div class="bg-white w-full max-w-md mx-auto rounded-t-[40px] flex-grow flex flex-col shadow-2xl overflow-hidden relative">
                 <div class="p-8 bg-orange-600 text-white flex justify-between items-center shrink-0">
                     <div>
-                        <h3 class="font-black text-2xl leading-none uppercase tracking-tighter">{{ activeChecklistOrder.providerName }}</h3>
-                        <p class="text-[10px] opacity-70 mt-1 font-bold uppercase tracking-widest">Verificando Mercancía</p>
+                        <h3 class="font-black text-2xl uppercase tracking-tighter leading-none">{{ activeChecklistOrder.providerName }}</h3>
+                        <p class="text-[10px] opacity-70 mt-1 font-bold uppercase tracking-widest">Verificación de productos</p>
                     </div>
-                    <button @click="activeChecklistOrder = null" class="bg-white/20 hover:bg-white/40 w-12 h-12 rounded-full flex items-center justify-center transition-colors">
-                        <i class="fas fa-times text-xl"></i>
+                    <button @click="activeChecklistOrder = null" class="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
                 
@@ -191,34 +182,34 @@
                     <div v-for="(item, idx) in activeChecklistOrder.items" :key="idx" 
                          v-if="item.n" 
                          @click="toggleItem(item)"
-                         class="flex items-center bg-white p-5 rounded-2xl border-2 transition-all active:scale-95"
-                         :class="item.checked ? 'border-green-500 bg-green-50 shadow-none' : 'border-transparent shadow-sm'">
+                         class="flex items-center bg-white p-5 rounded-2xl border-2 transition-all"
+                         :class="item.checked ? 'border-green-500 bg-green-50' : 'border-transparent shadow-sm'">
                         
                         <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center mr-4 shrink-0"
-                             :class="item.checked ? 'bg-green-600 border-green-600 text-white animate-bounce' : 'border-gray-200 text-transparent'">
+                             :class="item.checked ? 'bg-green-600 border-green-600 text-white' : 'border-gray-200 text-transparent'">
                             <i class="fas fa-check"></i>
                         </div>
                         
                         <div class="flex-grow" :class="{'checked-item': item.checked}">
-                            <div class="font-black text-slate-800 uppercase text-sm leading-tight">{{ item.n }}</div>
-                            <div class="text-xs text-orange-600 font-bold mt-1">CANTIDAD: {{ item.q }}</div>
+                            <div class="font-black text-slate-800 uppercase text-sm">{{ item.n }}</div>
+                            <div class="text-xs text-orange-600 font-bold mt-1">Cant: {{ item.q }}</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-6 bg-white border-t shrink-0">
-                    <button @click="activeChecklistOrder = null" class="w-full py-5 bg-slate-800 text-white rounded-2xl font-black shadow-xl uppercase tracking-widest text-xs">
-                        Finalizar Revisión
+                    <button @click="activeChecklistOrder = null" class="w-full py-5 bg-slate-800 text-white rounded-2xl font-black uppercase text-xs">
+                        Terminar Punteo
                     </button>
                 </div>
             </div>
         </div>
 
-        <nav class="fixed bottom-0 max-w-md w-full bg-white border-t flex justify-around p-3 pb-6 safe-area-bottom z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        <nav class="fixed bottom-0 max-w-md w-full bg-white border-t flex justify-around p-3 pb-6 safe-area-bottom z-40 shadow-lg">
             <button v-for="tab in ['home', 'providers', 'orders', 'reception']" 
                     @click="currentTab = tab" 
                     :class="{'active-tab': currentTab === tab}" 
-                    class="flex flex-col items-center flex-1 transition-all duration-300">
+                    class="flex flex-col items-center flex-1">
                 <i :class="getTabIcon(tab)" class="text-xl mb-1"></i>
                 <span class="text-[8px] font-black uppercase tracking-tighter">{{ getTabLabel(tab) }}</span>
             </button>
@@ -244,15 +235,15 @@
                 });
 
                 onMounted(() => {
-                    const p = localStorage.getItem('ing_db_v3_p');
-                    const o = localStorage.getItem('ing_db_v3_o');
+                    const p = localStorage.getItem('ing_db_v4_p');
+                    const o = localStorage.getItem('ing_db_v4_o');
                     if (p) providers.value = JSON.parse(p);
                     if (o) orders.value = JSON.parse(o);
                 });
 
                 const saveToStorage = () => {
-                    localStorage.setItem('ing_db_v3_p', JSON.stringify(providers.value));
-                    localStorage.setItem('ing_db_v3_o', JSON.stringify(orders.value));
+                    localStorage.setItem('ing_db_v4_p', JSON.stringify(providers.value));
+                    localStorage.setItem('ing_db_v4_o', JSON.stringify(orders.value));
                 };
 
                 const currentDayName = computed(() => {
@@ -269,7 +260,6 @@
                     providers.value.filter(p => p.orderDay === currentDayName.value).length
                 );
 
-                // GESTIÓN PROVEEDORES
                 const openAddModal = () => {
                     isNew.value = true;
                     tempProv.value = {
@@ -286,7 +276,7 @@
                 };
 
                 const saveProvider = () => {
-                    if (!tempProv.value.name) return alert('Pon un nombre al proveedor');
+                    if (!tempProv.value.name) return;
                     if (isNew.value) providers.value.push(tempProv.value);
                     else {
                         const idx = providers.value.findIndex(p => p.id === tempProv.value.id);
@@ -297,32 +287,29 @@
                 };
 
                 const deleteProvider = (id) => {
-                    if(confirm('¿Eliminar este proveedor de la lista?')) {
+                    if(confirm('¿Eliminar proveedor?')) {
                         providers.value = providers.value.filter(p => p.id !== id);
                         saveToStorage();
                     }
                 };
 
-                // GESTIÓN PEDIDOS
                 const generateOrderFromTemplate = (prov) => {
                     const newOrder = {
                         id: Date.now(),
-                        providerId: prov.id,
                         providerName: prov.name,
                         providerPhone: prov.phone,
                         deliveryDay: prov.deliveryDay,
                         date: new Date().toLocaleDateString('es-ES'),
-                        items: prov.items.map(i => ({ ...i, checked: false })),
+                        items: JSON.parse(JSON.stringify(prov.items.map(i => ({ ...i, checked: false })))),
                         status: 'Pendiente',
                         notes: ''
                     };
                     orders.value.unshift(newOrder);
                     saveToStorage();
-                    alert('¡Pedido generado! Revisa la pestaña de Recepción.');
                     currentTab.value = 'reception';
                 };
 
-                // GESTIÓN RECEPCIÓN
+                // FUNCIÓN CORREGIDA
                 const openChecklist = (order) => {
                     activeChecklistOrder.value = order;
                 };
@@ -343,24 +330,22 @@
                 const exportToWhatsApp = (order) => {
                     const itemsList = order.items
                         .filter(i => i.n)
-                        .map(i => `• ${i.n}: ${i.q} ${i.checked ? '✅' : '❌'}`)
+                        .map(i => `${i.checked ? '✅' : '❌'} ${i.n}: ${i.q}`)
                         .join('\n');
                     
                     const text = encodeURIComponent(
-                        `*INGENERO PRO - PEDIDO SEMANAL*\n\n` +
-                        `*Proveedor:* ${order.providerName}\n` +
+                        `*RECEPCIÓN INGENERO*\n` +
+                        `*Prov:* ${order.providerName}\n` +
                         `*Fecha:* ${order.date}\n\n` +
                         `*PRODUCTOS:*\n${itemsList}\n\n` +
                         `*ESTADO:* ${order.status.toUpperCase()}\n` +
-                        `*INCIDENCIAS:* ${order.notes || 'Ninguna'}`
+                        `*NOTAS:* ${order.notes || 'Sin incidencias'}`
                     );
-                    
-                    const phone = order.providerPhone || '';
-                    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+                    window.open(`https://wa.me/${order.providerPhone || ''}?text=${text}`, '_blank');
                 };
 
                 const clearHistory = () => {
-                    if(confirm('¿Borrar historial de pedidos? (Los proveedores se mantienen)')) {
+                    if(confirm('¿Borrar historial?')) {
                         orders.value = [];
                         saveToStorage();
                     }
@@ -374,7 +359,7 @@
                 };
 
                 const getTabIcon = (t) => ({ home: 'fas fa-chart-pie', providers: 'fas fa-address-book', orders: 'fas fa-file-signature', reception: 'fas fa-box-open' }[t]);
-                const getTabLabel = (t) => ({ home: 'Panel', providers: 'Directorio', orders: 'Pedidos', reception: 'Checklist' }[t]);
+                const getTabLabel = (t) => ({ home: 'Panel', providers: 'Directorio', orders: 'Pedir', reception: 'Checklist' }[t]);
 
                 return {
                     currentTab, providers, orders, editingProvider, activeChecklistOrder, isNew, days, tempProv,
